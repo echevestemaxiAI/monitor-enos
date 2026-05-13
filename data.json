@@ -1,0 +1,22 @@
+{
+    "fecha_actualizacion": "13/05/2026 08:28",
+    "oni": 0.7,
+    "caudal_br": 11500,
+    "puertos": [
+        {
+            "nombre": "Concordia",
+            "nivel": 6.2,
+            "tendencia": "Ascenso"
+        },
+        {
+            "nombre": "Col\u00f3n",
+            "nivel": 4.15,
+            "tendencia": "Estacionario"
+        },
+        {
+            "nombre": "C. del Uruguay",
+            "nivel": 2.85,
+            "tendencia": "Descenso"
+        }
+    ]
+}
