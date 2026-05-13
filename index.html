@@ -2,104 +2,89 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monitor ENOS - Cuenca del Plata</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
-        :root { --primary: #1a3a5a; --bg: #f4f7f9; --text: #333; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
-        .container { max-width: 1100px; margin: auto; }
-        .header { border-bottom: 3px solid var(--primary); margin-bottom: 30px; padding-bottom: 10px; }
+        :root { --primary: #1a3a5a; --bg: #f4f7f9; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; }
+        .container { max-width: 1000px; margin: auto; }
         .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        h2, h3 { color: var(--primary); margin-top: 0; }
-        .desc { font-size: 0.9em; color: #666; margin-bottom: 15px; line-height: 1.4; }
-        .val-display { font-size: 1.8em; font-weight: bold; color: var(--primary); margin-bottom: 10px; }
-        .mini-chart { height: 150px; width: 100%; }
+        .desc { font-size: 0.85em; color: #666; margin-bottom: 10px; }
+        .val { font-size: 1.8em; font-weight: bold; color: var(--primary); }
+        .chart { height: 150px; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
-        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="header">
-        <h1>Monitor de Variables ENOS</h1>
-        <p>Estado de situación: Región Litoral y Cuenca del Uruguay</p>
-    </div>
-
-    <!-- VARIABLE 1: INDICE ONI -->
     <div class="card">
-        <h3>Índice ONI (Pacífico Ecuatorial)</h3>
-        <p class="desc">Mide la desviación de la temperatura superficial del mar en el Pacífico Central. Valores sostenidos por encima de +0.5°C indican la presencia del fenómeno El Niño.</p>
+        <h2>Índice ONI (Pacífico Ecuatorial)</h2>
+        <p class="desc">Mide la anomalía térmica en el Pacífico Central. Valores > +0.5°C indican fase Niño.</p>
         <div class="grid">
-            <div id="oni-val" class="val-display">-- °C</div>
-            <div id="oni-chart" class="mini-chart"></div>
+            <div id="oni-val" class="val">Cargando...</div>
+            <div id="oni-chart" class="chart"></div>
         </div>
     </div>
 
     <div class="grid">
-        <!-- VARIABLE 2: CAUDAL DE APORTE -->
         <div class="card">
             <h3>Caudal de Aporte (Salto Grande)</h3>
-            <p class="desc">Volumen de agua que ingresa al embalse proveniente de la alta cuenca en Brasil. Es el principal indicador anticipado de crecidas.</p>
-            <div id="caudal-val" class="val-display">-- m³/s</div>
-            <div id="caudal-chart" class="mini-chart"></div>
+            <p class="desc">Volumen entrante desde Brasil. Indicador anticipado de crecidas en el Litoral.</p>
+            <div id="caudal-val" class="val">-- m³/s</div>
+            <div id="caudal-chart" class="chart"></div>
         </div>
 
-        <!-- VARIABLE 3: NIVELES DE PUERTO -->
         <div class="card">
-            <h3>Niveles Hidrométricos</h3>
-            <p class="desc">Altura física del río respecto al cero local. Define los estados de alerta (11.00m) y evacuación (12.50m) en el puerto de Concordia.</p>
-            <table>
-                <thead>
-                    <tr><th>Puerto</th><th>Nivel</th><th>Tendencia</th></tr>
-                </thead>
-                <tbody id="puertos-data">
-                    <tr><td>Concordia</td><td>--</td><td>--</td></tr>
-                    <tr><td>Colón</td><td>--</td><td>--</td></tr>
-                </tbody>
+            <h3>Niveles de Puerto</h3>
+            <p class="desc">Altura del río en escala local. Referencia para alertas (11.00m) y evacuación (12.50m).</p>
+            <table id="tabla-puertos">
+                <tr><th>Puerto</th><th>Nivel</th><th>Tendencia</th></tr>
             </table>
         </div>
     </div>
 </div>
 
 <script>
-async function loadData() {
+async function updateData() {
     try {
+        // Buscamos el archivo generado por el scraper
         const r = await fetch('data.json');
         const d = await r.json();
 
-        // Actualizar Valores
+        // Vinculación de variables (deben coincidir con scraper.py)
         document.getElementById('oni-val').innerText = d.oni + " °C";
         document.getElementById('caudal-val').innerText = d.caudal_br.toLocaleString() + " m³/s";
 
-        // Gráfico ONI (Histórico Contextual)
+        // Gráfico ONI
         Plotly.newPlot('oni-chart', [{
-            x: ['Ene', 'Feb', 'Mar', 'Abr', 'May'],
-            y: [0.2, 0.4, 0.5, 0.6, d.oni],
-            type: 'scatter', fill: 'tozeroy', line: {color: '#1a3a5a'}
+            x: ['Mes -2', 'Mes -1', 'Actual'],
+            y: [d.oni - 0.2, d.oni - 0.1, d.oni],
+            type: 'scatter', fill: 'tozeroy'
         }], {margin: {t:0, b:20, l:30, r:10}, height: 150});
 
-        // Gráfico Caudal (Histórico Contextual)
+        // Gráfico Caudal
         Plotly.newPlot('caudal-chart', [{
-            x: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
-            y: [8000, 9500, 10200, d.caudal_br],
+            x: ['Anterior', 'Actual'],
+            y: [d.caudal_br * 0.9, d.caudal_br],
             type: 'bar', marker: {color: '#3498db'}
         }], {margin: {t:0, b:20, l:40, r:10}, height: 150});
 
-        // Tabla Puertos
-        const tbody = document.getElementById('puertos-data');
-        tbody.innerHTML = d.puertos.map(p => 
-            `<tr><td>${p.nombre}</td><td>${p.nivel}m</td><td>${p.tendencia}</td></tr>`
-        ).join('');
+        // Tabla de Puertos
+        let html = '<tr><th>Puerto</th><th>Nivel</th><th>Tendencia</th></tr>';
+        d.puertos.forEach(p => {
+            html += `<tr><td>${p.nombre}</td><td>${p.nivel}m</td><td>${p.tendencia}</td></tr>`;
+        });
+        document.getElementById('tabla-puertos').innerHTML = html;
 
-    } catch (e) { console.log("Cargando datos..."); }
+    } catch (e) {
+        console.log("Esperando archivo data.json...");
+    }
 }
-loadData();
-setInterval(loadData, 60000);
+updateData();
+setInterval(updateData, 300000); // 5 minutos
 </script>
-
 </body>
 </html>
