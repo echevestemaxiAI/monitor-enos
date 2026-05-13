@@ -1,13 +1,16 @@
 name: Actualizar Monitor
 on:
+  workflow_dispatch:
   schedule:
-    - cron: '0 */6 * * *' # Ejecuta cada 6 horas
-  workflow_dispatch: # Permite ejecutarlo a mano para probar
+    - cron: '0 */6 * * *'
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      - name: Instalar dependencias
+        run: pip install requests beautifulsoup4
       - name: Ejecutar Scraper
         run: python scraper.py
       - name: Guardar Cambios
@@ -15,5 +18,5 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add data.json
-          git commit -m "Actualización automática de niveles" || exit 0
+          git commit -m "Actualizacion automatica" || exit 0
           git push
