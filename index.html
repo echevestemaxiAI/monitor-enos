@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Monitoreo ENOS - Litoral Argentino</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        :root {
+            --primary: #1a3a5a; --accent: #007bff; --danger: #d9534f;
+            --warning: #f0ad4e; --success: #5cb85c; --light: #f8f9fa;
+        }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #eef2f7; margin: 0; padding: 20px; }
+        .dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 1200px; margin: auto; }
+        .card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .full-width { grid-column: 1 / -1; }
+        .header { text-align: center; color: var(--primary); margin-bottom: 20px; }
+        .status-badge { padding: 10px 20px; border-radius: 50px; font-weight: bold; display: inline-block; margin-top: 10px; }
+        
+        /* Indicadores de Alerta */
+        .alert-item { border-left: 5px solid #ccc; padding: 10px; margin: 10px 0; background: #fafafa; }
+        .alert-active { border-left-color: var(--danger); animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }
+        th { background: var(--light); color: var(--primary); }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Monitor Regional ENOS</h1>
+    <p>Integración de Datos: Pacífico Central | Cuenca Alta Brasil | Entre Ríos</p>
+</div>
+
+<div class="dashboard">
+    <!-- 1. ESTADO GLOBAL (PACÍFICO) -->
+    <div class="card full-width">
+        <h3>Evolución de Anomalía Térmica (Niño 3.4)</h3>
+        <div id="plot-pacifico"></div>
+        <div style="text-align:center">
+            <div id="global-badge" class="status-badge">Sincronizando con NOAA...</div>
+        </div>
+    </div>
+
+    <!-- 2. ALERTA TEMPRANA (SUR DE BRASIL) -->
+    <div class="card">
+        <h3>Alerta Temprana: Cuenca Alta (Brasil)</h3>
+        <div id="brasil-alerts">
+            <div class="alert-item">
+                <strong>Precipitación acumulada (72h):</strong> 
+                <span id="rain-br">Sin datos</span>
+            </div>
+            <div class="alert-item" id="caudal-br-box">
+                <strong>Aporte Represas (Paraná/Uruguay):</strong> 
+                <span id="caudal-br">Normal</span>
+            </div>
+        </div>
+        <p style="font-size: 0.8em; color: #666;">*Datos clave para anticipar crecidas en el Litoral (Delay 5-7 días).</p>
+    </div>
+
+    <!-- 3. IMPACTO LOCAL (ENTRE RÍOS) -->
+    <div class="card">
+        <h3>Situación Hidrométrica: Entre Ríos</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Puerto</th>
+                    <th>Nivel (m)</th>
+                    <th>Tendencia</th>
+                </tr>
+            </thead>
+            <tbody id="puertos-table">
+                <tr><td>Concordia</td><td id="lvl-con">--</td><td id="ten-con">--</td></tr>
+                <tr><td>Colón</td><td id="lvl-col">--</td><td id="ten-col">--</td></tr>
+                <tr><td>C. del Uruguay</td><td id="lvl-cdu">--</td><td id="ten-cdu">--</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 4. ANÁLISIS DE RIESGO INDUSTRIAL -->
+    <div class="card full-width">
+        <h3>Análisis Crítico de Riesgo Operativo</h3>
+        <div id="risk-analysis">
+            <p><strong>Correlación Acústica:</strong> Si el índice ONI es > 1.0 (Niño Fuerte), se prevé un aumento de la HR local. 
+            <em>Factor de corrección sugerido para mediciones exteriores: +0.2dB por cada 10% de aumento en HR.</em></p>
+        </div>
+    </div>
+</div>
+
+<script>
+// FUNCIÓN PARA ACTUALIZAR TODO EL DASHBOARD
+async function updateDashboard() {
+    try {
+        // En producción, aquí harías: const response = await fetch('data.json');
+        // Para esta demo, simulamos la llegada de datos técnicos procesados:
+        const data = {
+            oni: 0.8, // Niño moderado
+            rainBR: "120mm (Exceso)",
+            caudalBR: 14500,
+            puertos: {
+                con: { nivel: 6.40, ten: "Ascenso" },
+                col: { nivel: 4.20, ten: "Estacionario" },
+                cdu: { nivel: 3.10, ten: "Descenso" }
+            }
+        };
+
+        // 1. Lógica Pacífico
+        const badge = document.getElementById('global-badge');
+        if(data.oni >= 0.5) {
+            badge.innerText = "ALERTA DE EL NIÑO";
+            badge.style.background = "#f8d7da"; badge.style.color = "#721c24";
+        }
+
+        // 2. Lógica Brasil
+        document.getElementById('rain-br').innerText = data.rainBR;
+        if(data.caudalBR > 12000) {
+            document.getElementById('caudal-br-box').className = "alert-item alert-active";
+            document.getElementById('caudal-br').innerText = data.caudalBR + " m3/s (CRÍTICO)";
+        }
+
+        // 3. Lógica Puertos
+        document.getElementById('lvl-con').innerText = data.puertos.con.nivel;
+        document.getElementById('ten-con').innerText = data.puertos.con.ten;
+        // ... (repetir para otros puertos)
+
+        // 4. Gráfico (Simulado con tendencia histórica)
+        const trace1 = {
+            x: ['Mes 1', 'Mes 2', 'Mes 3', 'Mes 4', 'Mes 5'],
+            y: [0.1, 0.3, 0.5, 0.7, 0.8],
+            type: 'scatter', mode: 'lines+markers',
+            line: {color: '#1a3a5a'}
+        };
+        Plotly.newPlot('plot-pacifico', [trace1], { height: 300, margin: {t:10, b:40, l:40, r:10} });
+
+    } catch (e) {
+        console.error("Error cargando datos del sistema", e);
+    }
+}
+
+updateDashboard();
+// Actualización automática cada 10 minutos
+setInterval(updateDashboard, 600000);
+</script>
+
+</body>
+</html>
